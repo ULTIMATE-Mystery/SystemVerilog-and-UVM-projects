@@ -1,2 +1,2 @@
-# UVM projects
-UVM projects using EDA Playground
+# SystemVerilog & UVM projects
+SystemVerilog & UVM projects using EDA Playground
