@@ -812,16 +812,17 @@ endfunction
  
 virtual task run_phase(uvm_phase phase);
 phase.raise_objection(this);
+  
 //rdut.start(e.a.seqr);
 //#20;
 //vwrrdfx.start(e.a.seqr);
 //#20;
 //vwrrdincr.start(e.a.seqr);
 //#20;
-//vwrrdwrap.start(e.a.seqr);
-//#20;
-errwrrdfix.start(e.a.seqr);
+vwrrdwrap.start(e.a.seqr);
 #20;
+//errwrrdfix.start(e.a.seqr);
+//#20;
  
 phase.drop_objection(this);
 endtask
