@@ -263,7 +263,7 @@ module tb;
     
   initial begin
     env = new(fif);
-    env.gen.count = 10;
+    env.gen.count = 77;
     env.run();
   end
     
