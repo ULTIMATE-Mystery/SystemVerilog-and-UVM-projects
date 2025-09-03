@@ -1,6 +1,6 @@
 class transaction;
 
-  randc bit [1:0] opmode; /// write = 0, read = 1, random =2
+  randc bit [1:0] opmode; /// write = 0, read = 1, random = 2
   rand bit we;
   rand bit strb;
   rand bit [7:0] addr;
@@ -13,13 +13,9 @@ class transaction;
    }
   
    constraint addr_c {
-     addr == 5;
+     addr == 7;
    }
    
-   constraint wdata_c {
-    wdata > 0; wdata <= 8;
-   }
-  
     function transaction copy();
     copy       = new();
     copy.opmode  = this.opmode;
@@ -32,7 +28,7 @@ class transaction;
     endfunction
   
   function void display(input string tag);
-  $display("[%0s] : MODE :%0d WE : %0b STRB : %0b ADDR : %0d WDATA : %0d RDATA : %0d", tag,opmode, we,strb,addr,wdata,rdata);
+    $display("[%0s]: MODE: %0d WE: %0b STRB: %0b ADDR: %0d WDATA: %0d RDATA: %0d", tag, opmode, we,strb,addr,wdata,rdata);
   endfunction
   
   
@@ -45,9 +41,9 @@ class generator;
   
   transaction tr;
   mailbox #(transaction) mbxgd;
-  event done; ///gen completed sending requested no. of transaction
-  event drvnext; /// dr complete its wor;
-  event sconext; ///scoreboard complete its work
+  event done; /// gen completed sending requested no. of transaction
+  event drvnext; /// drv complete its work;
+  event sconext; /// scoreboard complete its work
  
    int count = 0;
   
@@ -97,12 +93,12 @@ event drvnext;
    repeat(10) @(posedge vif.clk);
    vif.rst <= 1'b0;
    repeat(5) @(posedge vif.clk);
-   $display("[DRV] : RESET DONE");
+   $display("[DRV]: RESET DONE");
   endtask
 
   task write();
   @(posedge vif.clk);
-  $display("[DRV] : DATA WRITE MODE");
+  $display("[DRV]: DATA WRITE MODE");
   vif.rst   <= 1'b0;
   vif.we    <= 1'b1;
   vif.strb  <= 1'b1;
@@ -115,7 +111,7 @@ event drvnext;
   
   task read();
   @(posedge vif.clk);
-  $display("[DRV] : DATA READ MODE");
+  $display("[DRV]: DATA READ MODE");
   vif.rst   <= 1'b0;
   vif.we    <= 1'b0;
   vif.strb  <= 1'b1;
@@ -127,7 +123,7 @@ event drvnext;
   
   task random();
   @(posedge vif.clk);
-  $display("[DRV] : RANDOM MODE");
+  $display("[DRV]: RANDOM MODE");
   vif.rst   <= 1'b0;
   vif.we    <= tr.we;
   vif.strb  <= tr.strb;
@@ -181,16 +177,17 @@ class monitor;
     
     tr = new();
     
-    forever 
-      begin 
-        wait( vif.rst == 1'b0); 
-       repeat(5) @(posedge vif.clk);
+    wait (vif.rst == 1'b0); 
+    repeat(5) @(posedge vif.clk);
+    
+    forever begin 
         @(posedge vif.clk);
+        #1;
         if(vif.strb == 1'b0)
         begin
         tr.strb = vif.strb;
-        repeat(2) @(vif.clk);
-        $display("[MON] : STRB IS ZERO");
+        repeat(2) @(posedge vif.clk);
+        $display("[MON]: STRB IS ZERO");
         mbxms.put(tr);  
         end
         else
@@ -202,7 +199,7 @@ class monitor;
         tr.addr = vif.addr;
         tr.rdata = vif.rdata; 
         @(posedge vif.clk);
-        $display("[MON] : STRB IS VALID");
+        $display("[MON]: STRB IS VALID");
         mbxms.put(tr);  
         end
       end 
@@ -229,7 +226,7 @@ class scoreboard;
     mbxms.get(tr);
     if(tr.strb == 1'b0) 
             begin
-            $display("[SCO] : INVALID STROBE");
+            $display("[SCO]: INVALID STROBE");
             end
     else 
       begin
@@ -237,21 +234,17 @@ class scoreboard;
           if(tr.we == 1'b1)
                       begin
                        data[tr.addr] = tr.wdata;
-                        $display("[SCO] : DATA WRITE DATA : %0d ADDR : %0d", tr.wdata, tr.addr);
+                        $display("[SCO]: DATA WRITE ADDR: %0d DATA: %0d", tr.addr, tr.wdata);
                       end  
           else 
              begin
-                    if(tr.rdata == 8'h11)
+                    if (tr.rdata == data[tr.addr])
                      begin
-                     $display("[SCO] : DATA MATCHED : DEFAULT VALUE READ");
-                     end
-                     else if (tr.rdata == data[tr.addr])
-                     begin
-                       $display("[SCO] : DATA MATCHED DATA : %0d ADDR : %0d", tr.wdata, tr.addr);
+                       $display("[SCO]: DATA MATCHED ADDR: %0d RDATA: %0d", tr.addr, tr.rdata);
                      end
                      else
                      begin
-                       $display("[SCO] : DATA MISMATCHED DATA : %0d ADDR : %0d", tr.wdata, tr.addr);
+                       $display("[SCO]: DATA MISMATCHED ADDR: %0d RDATA: %0d EXPECTED RDATA: %0d", tr.addr, tr.rdata, data[tr.addr]);
                      end 
              end
         end
@@ -260,9 +253,6 @@ class scoreboard;
    end
   endtask
 endclass
-
-
-
 
 ///////////////////////////////////////////////////
 
@@ -296,7 +286,7 @@ module tb;
     drv = new(mbxgd);
     mon = new(mbxms);
     sco = new(mbxms);
-    gen.count = 10;
+    gen.count = 20;
     drv.vif = vif;
     mon.vif = vif;
     
@@ -325,5 +315,4 @@ module tb;
     $dumpvars;   
   end
  
-
 endmodule
